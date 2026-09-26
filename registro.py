@@ -34,5 +34,4 @@ def registrar_usuario(username, password):
     return True
 
 if __name__ == "__main__":
-    # Prueba rápida de registro
-    registrar_usuario("testuser", "MiPasswordSegura123")
+    pass
