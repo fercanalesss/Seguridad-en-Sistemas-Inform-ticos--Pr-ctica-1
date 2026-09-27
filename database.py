@@ -18,7 +18,7 @@ def init_db():
         )
     """)
 
-    # 2. Tabla de Nonces (Para evitar ataques de Replay - Requisito RS3)[cite: 1]
+    # 2. Tabla de Nonces (Para evitar ataques de Replay - Requisito RS3)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS nonces (
             nonce TEXT PRIMARY KEY,
@@ -45,26 +45,25 @@ def init_db():
         ("erick_villalobos", "3r1ck_V1ll@l0b0s%2026_Tx")
     ]
 
-    for username, password in usuarios_prueba:
-        # Generamos un salt único por usuario (Requisito RS1)[cite: 1]
+    for username, password in usuarios_prueba: # Generamos un salt único por usuario (Requisito RS1)
         salt = os.urandom(16)
         pwd_bytes = password.encode('utf-8')
-        # Derivación de clave adaptativa (PBKDF2-HMAC-SHA256)[cite: 1]
+        # Derivación de clave adaptativa (PBKDF2-HMAC-SHA256)
         key = hashlib.pbkdf2_hmac('sha256', pwd_bytes, salt, 100000)
-        
+         
         password_hash = key.hex()
         salt_hex = salt.hex()
-
+         
         try:
             cursor.execute("""
-                INSERT INTO users (username, password_hash, salt) 
+                INSERT INTO users (username, password_hash, salt)
                 VALUES (?, ?, ?)
             """, (username, password_hash, salt_hex))
             print(f"[+] Usuario pre-registrado creado: {username}")
         except sqlite3.IntegrityError:
             # Si ya existían de una ejecución anterior, no pasa nada
             pass
-
+    
     conn.commit()
     conn.close()
     print("Base de datos inicializada correctamente con tablas y usuarios de prueba.")

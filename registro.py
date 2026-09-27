@@ -34,4 +34,7 @@ def registrar_usuario(username, password):
     return True
 
 if __name__ == "__main__":
-    pass
+    print("=== REGISTRO SECBANK ===")
+    u = input("Ingresa el nuevo usuario: ")
+    p = input("Ingresa la contraseña: ")
+    registrar_usuario(u, p)
