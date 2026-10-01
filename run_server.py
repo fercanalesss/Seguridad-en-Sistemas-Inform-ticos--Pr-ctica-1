@@ -1,7 +1,3 @@
-"""
-run_server.py
-Punto de entrada para ejecutar el servidor SecBank.
-"""
 import uvicorn
 
 if __name__ == "__main__":

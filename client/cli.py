@@ -1,15 +1,10 @@
-"""
-cli.py
-Interfaz de consola interactiva (CLI) para SecBank.
-Permite a los usuarios registrarse, iniciar sesión, transferir fondos y cerrar sesión.
-"""
-
 import sys
 import requests
+import os
 from client.secbank_client import SecBankClient
 
+#Display de menu principal
 def display_menu(is_authenticated: bool, username: str = None) -> None:
-    """Muestra el menú en función del estado de autenticación."""
     print("\n" + "=" * 40)
     print("           SECBANK - CLIENTE")
     if is_authenticated:
@@ -28,32 +23,28 @@ def display_menu(is_authenticated: bool, username: str = None) -> None:
         print("3. Salir")
     print("-" * 40)
 
-
+#Registros de usuarios nuevos
 def handle_register(client: SecBankClient) -> None:
     print("\n--- REGISTRO DE USUARIO ---")
     username = input("Nombre de usuario: ").strip()
     password = input("Contraseña: ").strip()
-
     if not username or not password:
         print("[-] Error: El usuario y la contraseña no pueden estar vacíos.")
         return
-
     try:
         res = client.register(username, password)
         print(f"[*] Respuesta del servidor: {res.get('message', res.get('detail', res))}")
     except requests.RequestException as exc:
         print(f"[-] Error de conexión con el servidor: {exc}")
 
-
+#Login de usuarios ya existentes
 def handle_login(client: SecBankClient) -> None:
     print("\n--- INICIO DE SESIÓN ---")
     username = input("Nombre de usuario: ").strip()
     password = input("Contraseña: ").strip()
-
     if not username or not password:
         print("[-] Error: Debe ingresar usuario y contraseña.")
         return
-
     try:
         res = client.login(username, password)
         if client.is_authenticated:
@@ -63,11 +54,11 @@ def handle_login(client: SecBankClient) -> None:
     except requests.RequestException as exc:
         print(f"[-] Error de conexión con el servidor: {exc}")
 
-
+#Realizar transferencias
 def handle_transfer(client: SecBankClient) -> None:
     print("\n--- NUEVA TRANSFERENCIA BANCARIA ---")
-    origin = input("Cuenta de origen (IBAN, ej. ES1234567890123456789012): ").strip()
-    destination = input("Cuenta de destino (IBAN, ej. ES9876543210987654321098): ").strip()
+    origin = input("Cuenta de origen (IBAN, ej. ES12345...): ").strip()
+    destination = input("Cuenta de destino (IBAN, ej. ES9876...): ").strip()
     amount_str = input("Importe (ej. 1500.50): ").strip()
 
     try:
@@ -98,10 +89,13 @@ def handle_transfer(client: SecBankClient) -> None:
 
 def main() -> None:
     client = SecBankClient(base_url="http://127.0.0.1:8080")
+    clear_cmd = "cls" if os.name == "nt" else "clear"
 
     while True:
+        os.system(clear_cmd)
         display_menu(client.is_authenticated, client.username)
         choice = input("Seleccione una opción: ").strip()
+        os.system(clear_cmd)
 
         if not client.is_authenticated:
             if choice == "1":
@@ -125,6 +119,9 @@ def main() -> None:
                 sys.exit(0)
             else:
                 print("[-] Opción no válida.")
+        
+        if choice != "3":
+            input("\nPresione Enter para continuar")
 
 
 if __name__ == "__main__":

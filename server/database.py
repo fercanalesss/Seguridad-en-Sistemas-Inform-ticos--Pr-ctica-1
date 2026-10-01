@@ -5,10 +5,9 @@ import os
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "secbank.db")
 
 def init_db():
-    conn = sqlite3.connect("secbank.db")
-    cursor = conn.cursor()
-
-    # 1. Tabla de Usuarios
+    conn= sqlite3.connect("secbank.db")
+    cursor=conn.cursor()
+    # Tabla Usuarios
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -20,7 +19,7 @@ def init_db():
         )
     """)
 
-    # 2. Tabla de Nonces (Para evitar ataques de Replay - Requisito RS3)
+    #Nonces
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS nonces (
             nonce TEXT PRIMARY KEY,
@@ -28,7 +27,7 @@ def init_db():
         )
     """)
 
-    # 3. Tabla de Transacciones
+    #Transacciones
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS transactions (
             tx_id TEXT PRIMARY KEY,
@@ -40,22 +39,20 @@ def init_db():
         )
     """)
 
-    # --- USUARIOS PRE-REGISTRADOS CON CONTRASEÑAS FUERTES ---
+    #usuarios para probar, para agregar primero escribir wl usuario luego el password
+    #Agregar un usuario desde aqui ignora las restricciones al crear passwords
     usuarios_prueba = [
-        ("fernanda_canales", "F3rn4nd4_C@n@l3s#2026!SecBank"),
-        ("sonja_hohmann", "S0nj@_H0hm@nn$9876*Secure"),
-        ("erick_villalobos", "3r1ck_V1ll@l0b0s%2026_Tx")
+        ("fernanda_canales", "FerCan1!#"),
+        ("sonja_hohmann", "S0njaH?2#"),
+        ("erick_villalobos", "ErickVi14!#")
     ]
 
-    for username, password in usuarios_prueba: # Generamos un salt único por usuario (Requisito RS1)
-        salt = os.urandom(16)
-        pwd_bytes = password.encode('utf-8')
-        # Derivación de clave adaptativa (PBKDF2-HMAC-SHA256)
+    for username, password in usuarios_prueba:
+        salt =os.urandom(16)
+        pwd_bytes=password.encode('utf-8')
         key = hashlib.pbkdf2_hmac('sha256', pwd_bytes, salt, 100000)
-         
         password_hash = key.hex()
         salt_hex = salt.hex()
-         
         try:
             cursor.execute("""
                 INSERT INTO users (username, password_hash, salt)
@@ -63,7 +60,6 @@ def init_db():
             """, (username, password_hash, salt_hex))
             print(f"[+] Usuario pre-registrado creado: {username}")
         except sqlite3.IntegrityError:
-            # Si ya existían de una ejecución anterior, no pasa nada
             pass
     
     conn.commit()
