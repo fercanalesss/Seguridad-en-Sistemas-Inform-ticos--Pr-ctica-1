@@ -44,7 +44,7 @@ class SecBankClient:
             return {"error": "No autenticado. Por favor, inicie sesión primero."}
 
         url = f"{self.base_url}/api/v1/transfer"
-        payload = {
+        payload={
             "tx_id": str(uuid.uuid4()),
             "origin_account": origin_account,
             "destination_account": destination_account,
@@ -52,12 +52,12 @@ class SecBankClient:
             "currency": currency,
         }
         #Convertir el diccionario a un JSON y a bytes
-        payload_bytes = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+        payload_bytes=json.dumps(payload, separators=(",", ":")).encode("utf-8")
 
         #Seguridad
         nonce = generate_nonce() #Generar los nonces para evitar replay
-        timestamp = str(get_current_timestamp()) #El timestamp evita paquetes antiguos
-        signature = calculate_hmac(self.session_key, payload_bytes) #Evita man in the middle firmando datos con la clave
+        timestamp =str(get_current_timestamp()) #El timestamp evita paquetes antiguos
+        signature=calculate_hmac(self.session_key, payload_bytes) #Evita man in the middle firmando datos con la clave
 
         #Cabeceras
         headers = {
@@ -67,7 +67,7 @@ class SecBankClient:
             "X-Timestamp": timestamp,
             "X-Signature": signature,
         }
-        response = requests.post(url, data=payload_bytes, headers=headers, timeout=5)
+        response=requests.post(url, data=payload_bytes, headers=headers, timeout=5)
         return response.json()
 
     def logout(self) -> Dict[str, Any]:
@@ -80,15 +80,15 @@ class SecBankClient:
         headers = {"X-Session-ID": self.session_id}
 
         try:
-            response = requests.post(url, headers=headers, timeout=5)
+            response =requests.post(url, headers=headers, timeout=5)
             data = response.json()
         except requests.RequestException:
-            data = {"message": "Servidor no disponible. Sesión local cerrada."}
+            data={"message": "Servidor no disponible. Sesión local cerrada."}
 
             #Se borra la clave de sesion
         finally:
-            self.session_id = None
-            self.session_key = None
-            self.username = None
+            self.session_id=None
+            self.session_key=None
+            self.username=None
 
         return data
