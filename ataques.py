@@ -1,11 +1,12 @@
-import requests
-import uuid
-import time
+import requests #libreria para enviar peticiones al servidor
+import uuid #libreria para generar identificadores para las transferencias
+import time 
 import json
+#Librerias para generar y validar firmas hmac-sha256
 import hmac
 import hashlib
 
-BASE_URL = "http://127.0.0.1:8080/api/v1"
+BASE_URL = "http://127.0.0.1:8080/api/v1" #Almacenar direccion del API Rest
 
 # Usuarios: El primero sera para simular un login correcto, si se cambia solo revisar que el password sea correcto
 USER_AUTH = "erick_villalobos"
@@ -17,16 +18,18 @@ def print_header(title):
     print(f" {title}")
     print(f"{'='*70}")
 
+#Calcular firma de un diccionario
 def calcular_firma(session_key, payload_dict):
-    payload_bytes = json.dumps(payload_dict, separators=(",", ":")).encode("utf-8")
-    key_bytes = bytes.fromhex(session_key)
+    payload_bytes = json.dumps(payload_dict, separators=(",", ":")).encode("utf-8") #Convertir el diccionario en una cadena JSON y la transforma a utf-8
+    key_bytes = bytes.fromhex(session_key) #Convierte la clave de hexadecimal a bytes
     return hmac.new(key_bytes, payload_bytes, hashlib.sha256).hexdigest()
 
 def simular_ataques():
-    print_header("Login en erick_villalobos")
     #Iniciar sesion de manera legitima con uno de los usuarios de prueba, el ususario y password estan mas arriba
+    print_header("Login en erick_villalobos")
     res = requests.post(f"{BASE_URL}/login", json={"username": USER_AUTH, "password": PASS_AUTH})
-    
+
+    #Comprobar si el estado es 200 (OK), si no se devuelve un error y no se inicia sesion
     if res.status_code != 200:
         print("Error")
         return
@@ -36,7 +39,7 @@ def simular_ataques():
     session_key = data["session_key"]
     print(f"Login exitoso para {USER_AUTH}.")
     print(f"    Session ID: {session_id}")
-    print(f"    Session Key: {session_key[:10]}... (256-bits ocultos)")
+    print(f"    Session Key: {session_key[:10]}... 256-bits ocultos")
 
     print_header("Ataque por fuerza bruta")
     print("Se intenta adivinar el password")
@@ -51,11 +54,11 @@ def simular_ataques():
 
 
     print_header("Man in the middle")
-    #aqui se generan identificadores unicos para la transferencia
+    #Aqui se generan identificadores, nonce y timestamp
     nonce = str(uuid.uuid4())
     timestamp = str(int(time.time()))
 
-    #Datos para transferencia CORRECTA
+    #Datos para transferencia CORRECTA de 50 euros
     datos_original = {
         "tx_id": str(uuid.uuid4()),
         "origin_account": "ES1111",
