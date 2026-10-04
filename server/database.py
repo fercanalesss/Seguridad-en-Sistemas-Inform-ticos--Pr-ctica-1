@@ -41,29 +41,29 @@ def init_db():
 
     #usuarios para probar, para agregar primero escribir wl usuario luego el password
     #Agregar un usuario desde aqui ignora las restricciones al crear passwords
-    usuarios_prueba = [
+    usuarios_prueba=[
         ("fernanda_canales", "FerCan1!#"),
         ("sonja_hohmann", "S0njaH?2#"),
         ("erick_villalobos", "ErickVi14!#")
     ]
 
     for username, password in usuarios_prueba:
-        salt =os.urandom(16)
+        salt =os.urandom(16) #Para cada ususario se genera un salt
         pwd_bytes=password.encode('utf-8')
-        key = hashlib.pbkdf2_hmac('sha256', pwd_bytes, salt, 100000)
-        password_hash = key.hex()
-        salt_hex = salt.hex()
+        key=hashlib.pbkdf2_hmac('sha256', pwd_bytes, salt, 100000) #se aplica la funcion pbkdf2 pra convertir de texto plano a una cadena hexadecimal
+        password_hash=key.hex()
+        salt_hex=salt.hex()
         try:
             cursor.execute("""
                 INSERT INTO users (username, password_hash, salt)
                 VALUES (?, ?, ?)
-            """, (username, password_hash, salt_hex))
-            print(f"[+] Usuario pre-registrado creado: {username}")
+            """, (username,password_hash,salt_hex))
+            print(f"[+] Usuario pre-registrado creado:{username}")
         except sqlite3.IntegrityError:
             pass
     
-    conn.commit()
-    conn.close()
+    conn.commit() #Guardar la base de datos en el archivo secbank.py
+    conn.close() #cerrar conexion
     print("Base de datos inicializada correctamente con tablas y usuarios de prueba.")
 
 if __name__ == "__main__":
