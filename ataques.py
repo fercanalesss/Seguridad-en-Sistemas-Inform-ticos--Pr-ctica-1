@@ -1,6 +1,6 @@
 import requests #libreria para enviar peticiones al servidor
 import uuid #libreria para generar identificadores para las transferencias
-import time 
+import time   
 import json
 #Librerias para generar y validar firmas hmac-sha256
 import hmac
