@@ -29,13 +29,13 @@ def handle_register(client: SecBankClient) -> None:
     username = input("Nombre de usuario: ").strip()
     password = input("Contraseña: ").strip()
     if not username or not password:
-        print("[-] Error: El usuario y la contraseña no pueden estar vacíos.")
+        print("Error: El usuario y la contraseña no pueden estar vacíos.")
         return
     try:
         res = client.register(username, password)
-        print(f"[*] Respuesta del servidor: {res.get('message', res.get('detail', res))}")
+        print(f"Respuesta del servidor: {res.get('message', res.get('detail', res))}")
     except requests.RequestException as exc:
-        print(f"[-] Error de conexión con el servidor: {exc}")
+        print(f"Error de conexión con el servidor: {exc}")
 
 #Login de usuarios ya existentes
 def handle_login(client: SecBankClient) -> None:
@@ -48,47 +48,47 @@ def handle_login(client: SecBankClient) -> None:
     try:
         res = client.login(username, password)
         if client.is_authenticated:
-            print(f"[+] ¡Inicio de sesión exitoso! Bienvenido, {username}.")
+            print(f"Inicio de sesión exitoso! Bienvenido, {username}.")
         else:
-            print(f"[-] Fallo en el inicio de sesión: {res.get('detail', 'Credenciales inválidas.')}")
+            print(f"Fallo en el inicio de sesión: {res.get('detail', 'Credenciales inválidas.')}")
     except requests.RequestException as exc:
-        print(f"[-] Error de conexión con el servidor: {exc}")
+        print(f"Error de conexión con el servidor: {exc}")
 
 #Realizar transferencias
-def handle_transfer(client: SecBankClient) -> None:
+def handle_transfer(client: SecBankClient) -> None: #Solicita los datos para una transferencia
     print("\n--- NUEVA TRANSFERENCIA BANCARIA ---")
     origin = input("Cuenta de origen (IBAN, ej. ES12345...): ").strip()
     destination = input("Cuenta de destino (IBAN, ej. ES9876...): ").strip()
     amount_str = input("Importe (ej. 1500.50): ").strip()
 
     try:
-        amount = float(amount_str)
-        if amount <= 0:
-            print("[-] Error: El importe debe ser mayor que cero.")
+        amount=float(amount_str)
+        if amount<=0:
+            print("Error: El importe debe ser mayor que cero.")
             return
     except ValueError:
-        print("[-] Error: Formato de importe no válido.")
+        print("Error: Formato de importe no válido.")
         return
 
     try:
-        res = client.transfer(
+        res=client.transfer(
             origin_account=origin,
             destination_account=destination,
             amount=amount,
             currency="EUR",
         )
         if "detail" in res or "error" in res:
-            print(f"[-] Transferencia rechazada: {res.get('detail', res.get('error'))}")
+            print(f"Transferencia rechazada: {res.get('detail', res.get('error'))}")
         else:
-            print("[+] ¡Transferencia procesada con éxito!")
+            print("Transferencia procesada con éxito!")
             print(f"    ID de transacción: {res.get('tx_id')}")
             print(f"    Estado: {res.get('status')}")
     except requests.RequestException as exc:
-        print(f"[-] Error de conexión con el servidor: {exc}")
+        print(f"Error de conexión con el servidor: {exc}")
 
 
 def main() -> None:
-    client = SecBankClient(base_url="http://127.0.0.1:8080")
+    client = SecBankClient(base_url="http://127.0.0.1:8080") #Conecta el cliente con la base local del servidor
     clear_cmd = "cls" if os.name == "nt" else "clear"
 
     while True:
@@ -106,7 +106,7 @@ def main() -> None:
                 print("Saliendo del programa.")
                 sys.exit(0)
             else:
-                print("[-] Opción no válida.")
+                print("Opción no válida.")
         else:
             if choice == "1":
                 handle_transfer(client)
@@ -118,7 +118,7 @@ def main() -> None:
                 print("Saliendo del programa.")
                 sys.exit(0)
             else:
-                print("[-] Opción no válida.")
+                print("Opción no válida.")
         
         if choice != "3":
             input("\nPresione Enter para continuar")
