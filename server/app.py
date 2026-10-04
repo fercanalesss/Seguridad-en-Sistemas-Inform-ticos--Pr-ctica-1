@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta #librerias para control de tiempo
 import hashlib
 import json
 import os
@@ -6,12 +6,12 @@ import secrets
 import sqlite3
 import time
 from typing import Dict
-from fastapi import FastAPI, Header, HTTPException, Request, status
+from fastapi import FastAPI, Header, HTTPException, Request, status #Librerias para levantar el servidor
 from pydantic import BaseModel
 
 app = FastAPI(title="SecBank API", version="1.0.0")
 
-#Rutas
+#Rutas de la base de datos
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(BASE_DIR, "secbank.db")
 ROOT_DB = os.path.join(os.path.dirname(BASE_DIR), "secbank.db")
@@ -22,16 +22,16 @@ REPLAY_WINDOW_SECONDS = 300  # Ventana de 5 minutos para timestamps.
 #Si el timestamp anterior supera los 10 minutos (600), el ataque de prueba no funcionara. Revisar el archivo ataques.py
 ACTIVE_SESSIONS: Dict[str, Dict[str, str]] = {} #sesiones activas
 
-class UserCredentials(BaseModel):
+class UserCredentials(BaseModel): #Asegurar que las peticiones de login tengan los campos necesarios
     username: str
     password: str
 def get_db_connection():
     return sqlite3.connect(DB_FILE)
 
-# Aplica el algoritmo PBKDF2 con 100000 iteraciones y un salt
+#Aplica el algoritmo PBKDF2 con 100000 iteraciones y un salt
 def hash_password(password: str, salt: bytes) -> str:
     return hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 100000).hex()
-
+#Genera la firma hmac combinando clabe con los bytes de la peticion
 def compute_hmac_hex(key_hex: str, data_bytes: bytes) -> str:
     import hmac
     key_bytes = bytes.fromhex(key_hex)
@@ -40,14 +40,14 @@ def compute_hmac_hex(key_hex: str, data_bytes: bytes) -> str:
 #REGISTRO DE NUEVO USUARIO
 @app.post("/api/v1/register", status_code=status.HTTP_201_CREATED)
 def register_user(creds: UserCredentials):
-    #restricciones en las contrasenas
+    #restricciones en las contrasenas: mas de 8 caracteres, mayuscula, minuscula, numero y simbolo
     pwd = creds.password
     if len(pwd) < 8 or not any(c.isupper() for c in pwd) or not any(c.islower() for c in pwd) or not any(c.isdigit() for c in pwd) or not any(not c.isalnum() for c in pwd):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La contraseña debe tener al menos 8 caracteres, incluir mayusculas, minusculas, numeros y un simbolo."
         )
-    #se crea un salt al azar para el nuevo ususario
+    #se crea un salt aleatorio para el nuevo ususario
     salt=os.urandom(16)
     pwd_hash=hash_password(pwd, salt)
     conn=get_db_connection()
@@ -69,6 +69,7 @@ def register_user(creds: UserCredentials):
         conn.close()
 
     return {"message": f"Usuario '{creds.username}' registrado exitosamente."}
+#LOGIN DE USUARIOS
 @app.post("/api/v1/login")
 def login_user(creds: UserCredentials):
     conn = get_db_connection()
@@ -96,7 +97,7 @@ def login_user(creds: UserCredentials):
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Cuenta bloqueada temporalmente hasta {lock_time.strftime('%H:%M:%S')}.",
             )
-        else:
+        else: #Si ya pasaron los 5 minutos, se resetean los contadores de intentos fallidos
             cursor.execute(
                 "UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE id = ?",
                 (user_id,),
@@ -110,12 +111,12 @@ def login_user(creds: UserCredentials):
     if secrets.compare_digest(computed_hash, stored_hash):
         cursor.execute(
             "UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE id = ?",
-            (user_id,),
+            (user_id,), #Si hay intentos fallidos y el password coincide, se resetean a 0
         )
         conn.commit()
         conn.close()
 
-        # Generar clave
+        # Generar clave usando secrets, id de 128 bits y clave de 256 bits
         session_id = secrets.token_hex(16)
         session_key = secrets.token_hex(32)
 
@@ -147,7 +148,7 @@ def login_user(creds: UserCredentials):
             )
         conn.commit()
         conn.close()
-        raise HTTPException(
+        raise HTTPException( #Ccodigo de error
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciales incorrectas",
         )
@@ -156,7 +157,7 @@ def login_user(creds: UserCredentials):
 @app.post("/api/v1/logout")
 def logout_user(x_session_id: str = Header(None, alias="X-Session-ID")):
     if x_session_id and x_session_id in ACTIVE_SESSIONS:
-        del ACTIVE_SESSIONS[x_session_id]
+        del ACTIVE_SESSIONS[x_session_id] #Elimina la clave de sesion y el nombre de usuario del almacenamiento temporal
         return {"message": "Sesion cerrada exitosamente."}
     return {"message": "La sesion no existia o ya estaba cerrada."}
 
@@ -169,7 +170,7 @@ async def transfer_money(
     x_nonce: str = Header(None, alias="X-Nonce"),
     x_timestamp: str = Header(None, alias="X-Timestamp"),
 ):
-    #Verificar cabeceras 
+    #Verificar cabeceras y validarlas mediante active_sessions con el token del usuario
     if not all([x_session_id, x_signature, x_nonce, x_timestamp]):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -200,7 +201,7 @@ async def transfer_money(
         )
 
     #verificar nonces
-    #Si el nonce ya existe en la base de datos se identifica como ataque de replay
+    #Si el nonce ya existe en la base de datos se identifica como ataque de replay, verifica si el x_nonce ya fue utilizado
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT nonce FROM nonces WHERE nonce = ?", (x_nonce,))
